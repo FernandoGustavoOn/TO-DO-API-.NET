@@ -32,39 +32,39 @@ builder.Services.AddCors(options =>
 string? BuildConnectionString()
 {
     var databaseUrl = Environment.GetEnvironmentVariable("DATABASE_URL");
+
     if (!string.IsNullOrWhiteSpace(databaseUrl))
     {
-        // databaseUrl example: postgres://user:pass@host:5432/dbname
+        // garante compatibilidade com "postgresql://"
         databaseUrl = databaseUrl.Replace("postgresql://", "postgres://");
-        var uri = new Uri(databaseUrl);
-        var uri = new Uri(databaseUrl);
-        var userInfoParts = uri.UserInfo.Split(':', 2);
+
+        var dbUri = new Uri(databaseUrl);
+
+        var userInfoParts = dbUri.UserInfo.Split(':', 2);
         var username = Uri.UnescapeDataString(userInfoParts.ElementAtOrDefault(0) ?? string.Empty);
         var password = Uri.UnescapeDataString(userInfoParts.ElementAtOrDefault(1) ?? string.Empty);
 
         var csb = new NpgsqlConnectionStringBuilder
         {
-            Host = uri.Host,
-            Port = uri.Port > 0 ? uri.Port : 5432,
+            Host = dbUri.Host,
+            Port = dbUri.Port > 0 ? dbUri.Port : 5432,
             Username = username,
             Password = password,
-            Database = uri.AbsolutePath.Trim('/'),
+            Database = dbUri.AbsolutePath.Trim('/'),
             SslMode = SslMode.Require,
-            TrustServerCertificate = true,
             IncludeErrorDetail = true
         };
 
         return csb.ConnectionString;
     }
 
-    throw new Exception("DATABASE_URL não encontrado no ambiente.");
+    return builder.Configuration.GetConnectionString("DefaultConnection");
 }
 
 builder.Services.AddDbContext<TodoContext>(opt =>
 {
     var connString = BuildConnectionString();
 
-    // LOG seguro (não mostra senha)
     var safe = new NpgsqlConnectionStringBuilder(connString) { Password = "*****" }.ToString();
     Console.WriteLine($"[DB] Using connection: {safe}");
 
