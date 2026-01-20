@@ -35,6 +35,8 @@ string? BuildConnectionString()
     if (!string.IsNullOrWhiteSpace(databaseUrl))
     {
         // databaseUrl example: postgres://user:pass@host:5432/dbname
+        databaseUrl = databaseUrl.Replace("postgresql://", "postgres://");
+        var uri = new Uri(databaseUrl);
         var uri = new Uri(databaseUrl);
         var userInfoParts = uri.UserInfo.Split(':', 2);
         var username = Uri.UnescapeDataString(userInfoParts.ElementAtOrDefault(0) ?? string.Empty);
@@ -55,12 +57,17 @@ string? BuildConnectionString()
         return csb.ConnectionString;
     }
 
-    return builder.Configuration.GetConnectionString("DefaultConnection");
+    throw new Exception("DATABASE_URL não encontrado no ambiente.");
 }
 
 builder.Services.AddDbContext<TodoContext>(opt =>
 {
     var connString = BuildConnectionString();
+
+    // LOG seguro (não mostra senha)
+    var safe = new NpgsqlConnectionStringBuilder(connString) { Password = "*****" }.ToString();
+    Console.WriteLine($"[DB] Using connection: {safe}");
+
     opt.UseNpgsql(connString);
 });
 

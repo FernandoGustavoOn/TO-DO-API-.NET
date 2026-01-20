@@ -14,9 +14,6 @@ RUN dotnet publish "TodoApi.csproj" -c Release -o /app/publish /p:UseAppHost=fal
 FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS final
 WORKDIR /app
 
-# Render sets PORT env var. ASP.NET listens on http://0.0.0.0:PORT
-ENV ASPNETCORE_URLS=http://0.0.0.0:${PORT}
-
 COPY --from=build /app/publish .
 
 # default port for local run
